@@ -1,10 +1,21 @@
+"""Reference partial-enthalpy flux action used by the binary sample."""
+
 import numpy as np
 from hoomd.custom import Action
 from hoomd import logging
 
 class ComputeEnthalpyFlux(Action):
+    """Pure-Python reference implementation of partial-enthalpy flux.
+
+    This action reads the CPU local snapshot, groups particles by type, and
+    computes the same partial-enthalpy expression used by the compiled
+    ``ComputeheatFlux`` implementation. It is intended for validation and
+    inspection in the sample, not for production performance.
+    """
+
     flags = [Action.Flags.PRESSURE_TENSOR]
     def __init__(self):
+        """Initialize accumulators for instantaneous and averaged enthalpy."""
         super().__init__()
         self.h = np.zeros(3)
         self.jh = np.zeros(3)
@@ -12,6 +23,7 @@ class ComputeEnthalpyFlux(Action):
         self._count = 0
 
     def act(self, timestep):
+        """Compute partial enthalpy and enthalpy flux at one timestep."""
         with self._state.cpu_local_snapshot as data:
             typeid = data.particles.typeid
             v = data.particles.velocity
@@ -44,15 +56,15 @@ class ComputeEnthalpyFlux(Action):
     
     @logging.log(category="sequence")
     def enthalpy_flux(self):
-        """
-        instanteneous heat flux with partial enthalpy
-        """
+        """numpy.ndarray: Instantaneous partial-enthalpy flux vector."""
         return self.jh
     
     @logging.log(category="sequence")
     def partial_enthalpy(self):
+        """numpy.ndarray: Instantaneous partial enthalpy for each type."""
         return self.h
     
     @logging.log(category="sequence")
     def averaged_partial_enthalpy(self):
+        """numpy.ndarray: Running average of partial enthalpy by type."""
         return self.h_avg/self._count

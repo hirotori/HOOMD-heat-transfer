@@ -1,8 +1,18 @@
 # Copyright (c) 2009-2024 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-"""A module for computing heat flux in MD simulation"""
+"""Heat-flux analysis tools for HOOMD-blue simulations.
 
-# TODO: Import all Python modules in your component.
+The package exposes two public Python modules:
+
+``heatflux``
+    HOOMD ``Compute`` wrapper for total, kinetic, virial, and optional
+    partial-enthalpy heat flux.
+
+``correlate``
+    HOOMD ``Writer`` wrapper for accumulating autocorrelation functions from
+    logged numeric quantities.
+"""
+
 from . import version
 from . import heatflux, correlate
