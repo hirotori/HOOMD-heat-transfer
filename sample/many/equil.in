@@ -1,0 +1,53 @@
+# script for sequential simulations for ansemble average
+
+units		lj
+
+variable        nStep1 equal 10
+variable        nStep2 equal 40
+variable        outPos equal 50000
+variable        outEng equal 10
+variable        outRes equal 100000
+variable        dt equal 0.002
+variable        resNum equal 0
+
+variable        T equal 0.71   # temperature
+
+atom_style	full
+
+dimension       3
+boundary        p p p
+pair_style      lj/cut 2.5
+
+#read_data	init.data
+#read_restart	testLJ.restart
+read_data pos_sol.dat # all simulations are run in the sub-directories (try1, try2, ...)
+mass 		* 1.0
+
+#1:Solvent
+pair_coeff      1 1 1.0 1.0
+
+group           sol type 1
+# Apply initial velocities
+velocity 	all create $T ${seeds} rot yes mom yes dist gaussian
+
+##############################################
+#For calculating thermal conductivity via GK method
+##############################################
+
+compute         myKE all ke/atom
+compute         myPE all pe/atom
+compute         myStress all stress/atom NULL virial
+
+compute         flux all heat/flux myKE myPE myStress
+variable        Jx equal c_flux[1]/vol
+variable        Jy equal c_flux[2]/vol
+variable        Jz equal c_flux[3]/vol
+
+#switch to NVE
+fix             1 all nve
+
+thermo          1
+thermo_style    custom step temp v_Jx v_Jy v_Jz #v_k11 v_k22 v_k33
+
+run             ${nStep2}
+
