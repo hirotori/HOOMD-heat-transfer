@@ -2,6 +2,7 @@
 set(test_files __init__.py
           test_version.py
           test_heatflux.py
+          test_heatflow.py
           test_heatflux_twopairLJ.py
           test_correlator.py
     )

@@ -1,0 +1,15 @@
+# Pure Ar RNEMD sample in Lennard-Jones reduced units
+N 768
+rho 0.84
+kT_initial 0.71
+dt 0.002
+n_rnemd_steps 100000
+n_profile_samples 501
+area 45.2870213505
+elapsed_time 200
+summed_exchanged_energy 89.902653156
+imposed_heat_flux 0.00496293697814
+temperature_gradient_abs 0.00311149122088
+temperature_slope_left 0.00438026131066
+temperature_slope_right -0.00184272113111
+thermal_conductivity 1.59503486458

@@ -9,10 +9,14 @@ The package exposes two public Python modules:
     HOOMD ``Compute`` wrapper for total, kinetic, virial, and optional
     partial-enthalpy heat flux.
 
+``heatflow``
+    HOOMD ``Updater`` wrapper for imposing heat flow with the Muller-Plathe
+    reverse perturbation method.
+
 ``correlate``
     HOOMD ``Writer`` wrapper for accumulating autocorrelation functions from
     logged numeric quantities.
 """
 
 from . import version
-from . import heatflux, correlate
+from . import heatflux, heatflow, correlate

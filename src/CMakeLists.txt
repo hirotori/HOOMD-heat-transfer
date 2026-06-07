@@ -5,6 +5,7 @@ set(COMPONENT_NAME heat_transfer)
 set(_${COMPONENT_NAME}_sources
     module.cc
     ComputeheatFlux.cc
+    MuellerPlatheHeatFlow.cc
     ComputeHeatFluxGPU.cc
     Correlator.cc
     )
@@ -19,6 +20,7 @@ set(python_files
     __init__.py
     version.py
     heatflux.py
+    heatflow.py
     correlate.py
     )
 
