@@ -10,19 +10,20 @@ class ComputeheatFlux(operation.Compute):
     Args:
         filter (hoomd.filter.ParticleFilter): Particle group used for the
             kinetic and virial heat-flux contributions.
-        include_enthalpy (bool): When ``True``, add the partial-enthalpy flux
-            contribution. The partial enthalpy is accumulated by particle type
-            over all local particles, matching the C++ implementation.
+        include_enthalpy (bool): When ``True``, subtract the partial-enthalpy
+            flux contribution from the energy and virial flux. The partial
+            enthalpy is accumulated by particle type over all local particles,
+            matching the C++ implementation.
 
     Logged sequence quantities:
         `heatflux`
-            Total heat flux, `kinetic_heatflux + virial_heatflux + enthalpy_flux`.
+            Total heat flux, `kinetic_heatflux + virial_heatflux - enthalpy_flux`.
         `kinetic_heatflux`
             Convective energy flux.
         `virial_heatflux`
             Virial contribution to the heat flux.
         `enthalpy_flux`
-            Partial-enthalpy contribution. This is zero unless
+            Partial-enthalpy correction term. This is zero unless
             `include_enthalpy=True`.
     """
 

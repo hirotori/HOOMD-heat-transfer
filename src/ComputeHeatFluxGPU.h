@@ -4,7 +4,6 @@
 
 #ifdef ENABLE_HIP
 
-#include "hoomd/Autotuner.h"
 #include "hoomd/GPUArray.h"
 
 namespace hoomd
@@ -30,7 +29,6 @@ class PYBIND11_EXPORT ComputeHeatFluxGPU : public ComputeHeatFlux
     GPUArray<Scalar> m_partial_uesum;
     GPUArray<Scalar> m_partial_ptrace;
     GPUArray<Scalar3> m_partial_vsum;
-    std::shared_ptr<Autotuner<1>> m_tuner;
     };
 
 namespace detail

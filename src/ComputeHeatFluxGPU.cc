@@ -26,11 +26,6 @@ ComputeHeatFluxGPU::ComputeHeatFluxGPU(std::shared_ptr<SystemDefinition> sysdef,
         throw std::runtime_error("Error initializing ComputeHeatFluxGPU");
         }
 
-    m_tuner.reset(new Autotuner<1>({AutotunerBase::makeBlockSizeRange(m_exec_conf)},
-                                   m_exec_conf,
-                                   "heat_transfer_compute_heat_flux"));
-    m_autotuners.push_back(m_tuner);
-
     }
 
 void ComputeHeatFluxGPU::compute(uint64_t timestep)
@@ -55,8 +50,7 @@ void ComputeHeatFluxGPU::compute(uint64_t timestep)
                                               access_location::device,
                                               access_mode::read);
 
-    m_tuner->begin();
-    const unsigned int block_size = m_tuner->getParam()[0];
+    const unsigned int block_size = 256;
     const unsigned int num_blocks = std::max(1u, (group_size + block_size - 1) / block_size);
 
     if (m_partial_kin.getNumElements() < num_blocks)
@@ -93,8 +87,6 @@ void ComputeHeatFluxGPU::compute(uint64_t timestep)
 
     if (m_exec_conf->isCUDAErrorCheckingEnabled())
         CHECK_CUDA_ERROR();
-
-    m_tuner->end();
 
     m_J_kin = make_scalar3(0, 0, 0);
     m_J_vir = make_scalar3(0, 0, 0);
@@ -225,7 +217,7 @@ void ComputeHeatFluxGPU::compute(uint64_t timestep)
             }
         }
 
-    m_J = m_J_kin + m_J_vir + m_Jh;
+    m_J = m_J_kin + m_J_vir - m_Jh;
     }
 
 namespace detail

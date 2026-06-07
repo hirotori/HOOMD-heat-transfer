@@ -17,7 +17,7 @@ The package provides:
 
 `ComputeheatFlux` reports the sequence quantities:
 
-- `heatflux`: total heat flux, `kinetic_heatflux + virial_heatflux + enthalpy_flux`
+- `heatflux`: total heat flux, `kinetic_heatflux + virial_heatflux - enthalpy_flux`
 - `kinetic_heatflux`: convective energy flux
 - `virial_heatflux`: virial contribution
 - `enthalpy_flux`: partial-enthalpy contribution, enabled with `include_enthalpy=True`
@@ -122,7 +122,7 @@ This repository is under active development. The public API and sample files may
 
 `ComputeheatFlux` は以下の sequence quantity を提供します。
 
-- `heatflux`: 全熱流束、`kinetic_heatflux + virial_heatflux + enthalpy_flux`
+- `heatflux`: 全熱流束、`kinetic_heatflux + virial_heatflux - enthalpy_flux`
 - `kinetic_heatflux`: エネルギー輸送の対流項
 - `virial_heatflux`: ビリアル寄与
 - `enthalpy_flux`: 部分エンタルピー流束。`include_enthalpy=True` で有効化

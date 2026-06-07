@@ -157,7 +157,7 @@ void ComputeHeatFlux::compute(uint64_t timestep)
         }
 
     }
-    m_J = J_kin + J_vir + m_Jh;
+    m_J = J_kin + J_vir - m_Jh;
 }
 
 namespace detail {
