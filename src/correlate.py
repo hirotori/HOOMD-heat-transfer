@@ -4,15 +4,16 @@ import hoomd
 from numbers import Number
 import numpy as np
 from . import _heat_transfer
-from hoomd import operation
+from hoomd.custom import Action
 from hoomd.util import _dict_flatten
 
-class Correlator(hoomd.operation.Writer):
+class Correlator(hoomd.write.CustomWriter):
     """Accumulate autocorrelation functions from a HOOMD logger.
 
     ``Correlator`` samples numeric values from ``logger.log()`` when its
     trigger fires. Scalars are used directly. One-dimensional numeric
-    sequences are expanded into separate scalar channels. The C++ backend
+    sequences are expanded into separate scalar channels. The Python writer
+    reads the logger and passes numeric values to the C++ backend, which
     accumulates the unnormalized time-lag products and writes normalized
     autocorrelation data every ``output_interval`` timesteps.
 
@@ -31,23 +32,13 @@ class Correlator(hoomd.operation.Writer):
                  output_interval:int,
                  max_lag:int):
         """Initialize the correlator writer."""
-        
-        super().__init__(trigger)
-        
-        self._log_wrapper = _CorrelatorLogWrapper(logger)
-        self._output_interval = output_interval
-        self._max_lag = max_lag
- 
-    def _attach_hook(self):
-        """Create the C++ correlator and attach the Python log wrapper."""
-        self._cpp_obj = _heat_transfer.Correlator(
-            self._simulation.state._cpp_sys_def,
-            self.trigger,
-            self._output_interval,
-            self._max_lag
+
+        action = _CorrelatorAction(
+            logger=logger,
+            output_interval=output_interval,
+            max_lag=max_lag,
         )
-        self._cpp_obj.log_writer = self._log_wrapper
-        super()._attach_hook()
+        super().__init__(trigger=trigger, action=action)
 
     def correlation(self):
         """numpy.ndarray: Current normalized autocorrelation array.
@@ -55,7 +46,38 @@ class Correlator(hoomd.operation.Writer):
         The array shape is ``(max_lag, n_values)``. Columns follow the order
         produced by the flattened logger output.
         """
-        return self._cpp_obj.correlation
+        return self._action.correlation()
+
+
+class _CorrelatorAction(Action):
+    """Python action that samples a logger and updates a C++ correlator core."""
+
+    flags = [
+        Action.Flags.ROTATIONAL_KINETIC_ENERGY,
+        Action.Flags.PRESSURE_TENSOR,
+        Action.Flags.EXTERNAL_FIELD_VIRIAL,
+    ]
+
+    def __init__(self, logger, output_interval: int, max_lag: int):
+        super().__init__()
+        self._log_wrapper = _CorrelatorLogWrapper(logger)
+        self._core = _heat_transfer.Correlator(output_interval, max_lag)
+        self._nvalues = None
+
+    def act(self, timestep):
+        """Sample the logger and accumulate autocorrelation values."""
+        values = list(self._log_wrapper.log().values())
+
+        if self._nvalues is None:
+            self._nvalues = len(values)
+        elif len(values) != self._nvalues:
+            raise RuntimeError("Correlator: logged value count changed.")
+
+        self._core.accumulate(values, timestep)
+
+    def correlation(self):
+        """numpy.ndarray: Current normalized autocorrelation array."""
+        return self._core.correlation
     
 class _CorrelatorLogWrapper:
     """Validate and flatten HOOMD logger output for the C++ correlator."""
