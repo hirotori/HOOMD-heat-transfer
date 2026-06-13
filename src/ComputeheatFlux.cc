@@ -4,6 +4,8 @@
 #include "hoomd/GlobalArray.h"
 #include "hoomd/ParticleGroup.h"
 
+#include <stdexcept>
+
 namespace hoomd {
 ComputeHeatFlux::ComputeHeatFlux(std::shared_ptr<SystemDefinition> sysdef, 
                                  std::shared_ptr<ParticleGroup> group,
@@ -96,6 +98,18 @@ void ComputeHeatFlux::compute(uint64_t timestep)
     m_Jh = make_scalar3(0, 0, 0);
     if (m_include_enthalpy)
     {
+        const unsigned int current_ntypes = m_pdata->getNTypes();
+        if (current_ntypes != m_ntypes)
+        {
+            m_ntypes = current_ntypes;
+            m_count.resize(m_ntypes);
+            m_mvsq.resize(m_ntypes);
+            m_uesum.resize(m_ntypes);
+            m_ptrace.resize(m_ntypes);
+            m_vsum.resize(m_ntypes);
+            m_h.resize(m_ntypes);
+        }
+
         // zero clear
         for (unsigned int t = 0; t < m_ntypes; ++t)
         {
@@ -113,6 +127,10 @@ void ComputeHeatFlux::compute(uint64_t timestep)
         for (unsigned int i = 0; i < N; ++i)
         {
             const unsigned int t = __scalar_as_int(h_pos.data[i].w);
+            if (t >= m_ntypes)
+            {
+                throw std::runtime_error("ComputeHeatFlux: particle type index out of range");
+            }
 
             Scalar3 v = make_scalar3(h_vel.data[i].x,
                                     h_vel.data[i].y,
@@ -134,7 +152,7 @@ void ComputeHeatFlux::compute(uint64_t timestep)
         }
 
         // --- h_α(t) ---
-        for (int t = 0; t < m_ntypes; ++t)
+        for (unsigned int t = 0; t < m_ntypes; ++t)
         {
             if (m_count[t] > 0)
             {
