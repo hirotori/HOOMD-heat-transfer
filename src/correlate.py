@@ -66,12 +66,21 @@ class _CorrelatorAction(Action):
 
     def act(self, timestep):
         """Sample the logger and accumulate autocorrelation values."""
-        values = list(self._log_wrapper.log().values())
+        values = np.asarray(
+            list(self._log_wrapper.log().values()),
+            dtype=np.float64,
+            order="C",
+        )
 
         if self._nvalues is None:
-            self._nvalues = len(values)
-        elif len(values) != self._nvalues:
+            self._nvalues = values.size
+        elif values.size != self._nvalues:
             raise RuntimeError("Correlator: logged value count changed.")
+
+        if not np.all(np.isfinite(values)):
+            raise RuntimeError(
+                f"Correlator: non-finite values at timestep {timestep}: {values}"
+            )
 
         self._core.accumulate(values, timestep)
 

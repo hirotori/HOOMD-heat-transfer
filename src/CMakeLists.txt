@@ -22,6 +22,7 @@ set(python_files
     heatflux.py
     heatflow.py
     correlate.py
+    tablewriter.py
     )
 
 if (ENABLE_HIP)

@@ -52,20 +52,31 @@ void Correlator::initialize(unsigned int nvalues)
     m_nsample = 0;
 }
 
-void Correlator::accumulate(const std::vector<double>& values, uint64_t timestep)
+void Correlator::accumulate(py::array_t<double, py::array::c_style | py::array::forcecast> values,
+                            uint64_t timestep)
 {
-    if (values.empty())
+    py::buffer_info values_info = values.request();
+
+    if (values_info.ndim != 1)
+    {
+        throw std::runtime_error("Correlator: logged values must be a 1D array.");
+    }
+
+    if (values_info.shape[0] <= 0)
     {
         throw std::runtime_error("Correlator: no logged values were provided.");
     }
 
+    const size_t nvalues = static_cast<size_t>(values_info.shape[0]);
+    const double* values_data = static_cast<const double*>(values_info.ptr);
+
     if (m_nvalues == 0)
     {
-        if (values.size() > std::numeric_limits<unsigned int>::max())
+        if (nvalues > std::numeric_limits<unsigned int>::max())
             throw std::runtime_error("Correlator: too many logged values.");
-        initialize(static_cast<unsigned int>(values.size()));
+        initialize(static_cast<unsigned int>(nvalues));
     }
-    else if (values.size() != m_nvalues)
+    else if (nvalues != m_nvalues)
     {
         throw std::runtime_error("Correlator: logged value count changed.");
     }
@@ -82,7 +93,11 @@ void Correlator::accumulate(const std::vector<double>& values, uint64_t timestep
     }
 
     const size_t offset = static_cast<size_t>(m_lastindex) * m_nvalues;
-    std::copy(values.begin(), values.end(), m_buffer.begin() + offset);
+    if (offset + m_nvalues > m_buffer.size())
+    {
+        throw std::runtime_error("Correlator: ring-buffer write would exceed storage.");
+    }
+    std::copy(values_data, values_data + m_nvalues, m_buffer.begin() + offset);
 
     if (m_nsample < m_max_lag)
     {
@@ -108,8 +123,13 @@ void Correlator::accumulateValues()
     for (unsigned int k = 0; k < m_nsample; k++)
         m_counts[k]++;
 
-    if (m_nsample > m_max_lag || m_lastindex >= m_max_lag)
+    if (m_nsample > m_max_lag || m_lastindex >= m_max_lag
+        || m_counts.size() != m_max_lag
+        || m_buffer.size() != static_cast<size_t>(m_max_lag) * m_nvalues
+        || m_corr.size() != static_cast<size_t>(m_max_lag) * m_nvalues)
+        {
         throw std::runtime_error("Correlator: invalid ring-buffer state.");
+        }
 
     unsigned int m = m_lastindex;
     const unsigned int n = m_lastindex;
@@ -119,6 +139,13 @@ void Correlator::accumulateValues()
         const size_t corr_offset = static_cast<size_t>(lag) * m_nvalues;
         const size_t buffer_m_offset = static_cast<size_t>(m) * m_nvalues;
         const size_t buffer_n_offset = static_cast<size_t>(n) * m_nvalues;
+
+        if (corr_offset + m_nvalues > m_corr.size()
+            || buffer_m_offset + m_nvalues > m_buffer.size()
+            || buffer_n_offset + m_nvalues > m_buffer.size())
+            {
+            throw std::runtime_error("Correlator: correlation access would exceed storage.");
+            }
 
         for (unsigned int i = 0; i < m_nvalues; i++)
         {

@@ -16,7 +16,11 @@ The package exposes two public Python modules:
 ``correlate``
     HOOMD ``Writer`` wrapper for accumulating autocorrelation functions from
     logged numeric quantities.
+
+``tablewriter``
+    HOOMD ``Writer`` wrapper for writing scalar and sequence logger quantities
+    as table columns.
 """
 
 from . import version
-from . import heatflux, heatflow, correlate
+from . import heatflux, heatflow, correlate, tablewriter

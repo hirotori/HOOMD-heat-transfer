@@ -29,7 +29,8 @@ class Correlator
 
     py::array_t<double> getCorrelation() const;
 
-    void accumulate(const std::vector<double>& values, uint64_t timestep);
+    void accumulate(py::array_t<double, py::array::c_style | py::array::forcecast> values,
+                    uint64_t timestep);
 
 private:
     // --- 設定 ---
