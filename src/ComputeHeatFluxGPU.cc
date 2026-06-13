@@ -107,6 +107,18 @@ void ComputeHeatFluxGPU::compute(uint64_t timestep)
 
     if (m_include_enthalpy)
         {
+        const unsigned int current_ntypes = m_pdata->getNTypes();
+        if (current_ntypes != m_ntypes)
+            {
+            m_ntypes = current_ntypes;
+            m_count.resize(m_ntypes);
+            m_mvsq.resize(m_ntypes);
+            m_uesum.resize(m_ntypes);
+            m_ptrace.resize(m_ntypes);
+            m_vsum.resize(m_ntypes);
+            m_h.resize(m_ntypes);
+            }
+
         const unsigned int N = m_pdata->getN();
         const unsigned int enthalpy_block_size = 256;
         const unsigned int enthalpy_num_blocks
@@ -190,7 +202,7 @@ void ComputeHeatFluxGPU::compute(uint64_t timestep)
                                             access_location::host,
                                             access_mode::read);
 
-        for (int type = 0; type < m_ntypes; ++type)
+        for (unsigned int type = 0; type < m_ntypes; ++type)
             {
             for (unsigned int block = 0; block < enthalpy_num_blocks; ++block)
                 {

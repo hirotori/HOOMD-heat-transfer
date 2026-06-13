@@ -74,7 +74,7 @@ class PYBIND11_EXPORT ComputeHeatFlux : public Compute
 
     // enthalpy flux
     bool m_include_enthalpy;
-    int  m_ntypes;
+    unsigned int m_ntypes;
     Scalar3 m_Jh;
     // for computing partial enthalpy
     std::vector<Scalar> m_count;
