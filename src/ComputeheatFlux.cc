@@ -1,7 +1,7 @@
 #include "ComputeheatFlux.h"
+#include "HOOMDCompat.h"
 #include "hoomd/ParticleData.h"
 #include "hoomd/BoxDim.h"
-#include "hoomd/GlobalArray.h"
 #include "hoomd/ParticleGroup.h"
 
 #include <stdexcept>
@@ -47,7 +47,7 @@ void ComputeHeatFlux::compute(uint64_t timestep)
 
     ArrayHandle<Scalar4> h_vel(pdata->getVelocities(), access_location::host, access_mode::read);
 
-    const GlobalArray<Scalar>& net_virial = pdata->getNetVirial();
+    const HeatTransferArray<Scalar>& net_virial = pdata->getNetVirial();
     ArrayHandle<Scalar> h_virial(net_virial, access_location::host, access_mode::read);
 
     ArrayHandle<Scalar4> h_net_force(pdata->getNetForce(), access_location::host, access_mode::read);

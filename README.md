@@ -36,7 +36,7 @@ For strict energy and momentum conservation in RNEMD runs, use a filter containi
 
 ### Requirements
 
-- HOOMD-blue 4.0 or newer. This project has been tested with HOOMD-blue 4.8.0.
+- HOOMD-blue 6.x. This branch targets HOOMD-blue 6.0.0.
 - CMake 3.9 or newer.
 - A Python environment that can import the same HOOMD-blue installation used by CMake.
 - For GPU builds, a GPU-enabled HOOMD-blue build and the corresponding HIP/CUDA toolchain.
@@ -190,7 +190,7 @@ RNEMD でエネルギーと運動量を厳密に保存したい場合は、同�
 
 ### 必要なもの
 
-- HOOMD-blue 4.0 以降。このプロジェクトでは HOOMD-blue 4.8.0 で動作確認しています。
+- HOOMD-blue 6.x。このブランチは HOOMD-blue 6.0.0 を対象にしています。
 - CMake 3.9 以降
 - CMake が参照する HOOMD-blue と同じものを import できる Python 環境
 - GPU ビルドの場合は、GPU 対応の HOOMD-blue と対応する HIP/CUDA ツールチェイン

@@ -5,7 +5,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.9 FATAL_ERROR)
 project(hoomd-heat-transfer LANGUAGES C CXX)
 
 # Find the installed HOOMD.
-find_package(HOOMD 4.0.0 REQUIRED)
+find_package(HOOMD 6.0.0 REQUIRED)
+
+if(HOOMD_VERSION VERSION_GREATER_EQUAL 7.0.0)
+    message(FATAL_ERROR "The support/hoomd-6.0 branch supports HOOMD-blue 6.x. Use a matching support branch for HOOMD ${HOOMD_VERSION}.")
+endif()
 
 message(STATUS "Found HOOMD ${HOOMD_VERSION}: ${HOOMD_INSTALL_PREFIX}/${PYTHON_SITE_INSTALL_DIR}")
 

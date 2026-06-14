@@ -3,7 +3,7 @@
 #ifdef ENABLE_HIP
 
 #include "ComputeHeatFluxGPU.cuh"
-#include "hoomd/GlobalArray.h"
+#include "HOOMDCompat.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -37,14 +37,14 @@ void ComputeHeatFluxGPU::compute(uint64_t timestep)
         return;
 
     const unsigned int group_size = m_group->getNumMembers();
-    const GlobalArray<unsigned int>& group_members = m_group->getIndexArray();
+    const HeatTransferArray<unsigned int>& group_members = m_group->getIndexArray();
 
     ArrayHandle<Scalar4> d_vel(m_pdata->getVelocities(), access_location::device, access_mode::read);
     ArrayHandle<Scalar4> d_net_force(m_pdata->getNetForce(),
                                      access_location::device,
                                      access_mode::read);
 
-    const GlobalArray<Scalar>& net_virial = m_pdata->getNetVirial();
+    const HeatTransferArray<Scalar>& net_virial = m_pdata->getNetVirial();
     ArrayHandle<Scalar> d_virial(net_virial, access_location::device, access_mode::read);
     ArrayHandle<unsigned int> d_group_members(group_members,
                                               access_location::device,
