@@ -8,6 +8,7 @@
 #include "ComputeHeatFluxGPU.h"
 #include "Correlator.h"
 #include "MuellerPlatheHeatFlow.h"
+#include "MuellerPlatheHeatFlowGPU.h"
 
 namespace hoomd
     {
@@ -26,6 +27,7 @@ PYBIND11_MODULE(_heat_transfer, m)
         // TODO: Call export_ClassGPU(m) for each GPU enabled C++ class to be exported
         // to Python.
         export_ComputeHeatFluxGPU(m);
+        export_MuellerPlatheHeatFlowGPU(m);
 #endif
         export_Correlator(m);
 

@@ -93,7 +93,16 @@ class ReversePerturbationHeatFlow(Updater):
 
     def _attach_hook(self):
         group = self._simulation.state._get_group(self.filter)
-        self._cpp_obj = _heat_transfer.MuellerPlatheHeatFlow(
+        if isinstance(self._simulation.device, hoomd.device.CPU):
+            cpp_class = _heat_transfer.MuellerPlatheHeatFlow
+        else:
+            cpp_class = getattr(_heat_transfer, "MuellerPlatheHeatFlowGPU", None)
+            if cpp_class is None:
+                raise RuntimeError(
+                    "ReversePerturbationHeatFlow requires a GPU-enabled "
+                    "heat_transfer build when used with a GPU device.")
+
+        self._cpp_obj = cpp_class(
             self._simulation.state._cpp_sys_def,
             self.trigger,
             group,

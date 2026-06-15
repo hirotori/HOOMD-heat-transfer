@@ -7,12 +7,14 @@ set(_${COMPONENT_NAME}_sources
     ComputeheatFlux.cc
     MuellerPlatheHeatFlow.cc
     ComputeHeatFluxGPU.cc
+    MuellerPlatheHeatFlowGPU.cc
     Correlator.cc
     )
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
     ComputeHeatFluxGPU.cu
+    MuellerPlatheHeatFlowGPU.cu
     )
 
 # TODO: List all Python modules in python_files.
