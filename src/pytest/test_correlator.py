@@ -3,6 +3,7 @@ from hoomd import conftest
 from hoomd.heat_transfer import correlate
 import pytest
 import numpy as np
+from pathlib import Path
 
 class DummyLogWriter:
     def __init__(self, sequence):
@@ -134,3 +135,35 @@ def test_autocorrelation_linear_long(simulation_factory, one_particle_snapshot_f
     expected = np.array([autocorr_linear(N, tau) for tau in range(max_lag)])
 
     assert np.allclose(result[:,0], expected)
+
+
+def test_output_timelag_and_column_names(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+
+    core = correlate._heat_transfer.Correlator(4, 3, 2)
+    core.set_column_names(["heat_flux_0", "heat_flux_1"])
+
+    core.accumulate(np.array([1.0, 2.0], dtype=np.float64), 0)
+    core.accumulate(np.array([3.0, 4.0], dtype=np.float64), 2)
+    core.accumulate(np.array([5.0, 6.0], dtype=np.float64), 4)
+
+    lines = Path("correlation_4.dat").read_text().splitlines()
+
+    assert (
+        lines[2]
+        == "# Index TimeLag Count heat_flux_0*heat_flux_0 heat_flux_1*heat_flux_1"
+    )
+    assert lines[3].split()[:3] == ["1", "0", "3"]
+    assert lines[4].split()[:3] == ["2", "2", "2"]
+    assert lines[5].split()[:3] == ["3", "4", "1"]
+
+
+def test_log_wrapper_sequence_column_names():
+    class VectorLogWriter:
+        def log(self):
+            return {"heat_flux": (np.array([1.0, 2.0]), "dummy")}
+
+    logged = correlate._CorrelatorLogWrapper(VectorLogWriter()).log()
+
+    assert list(logged.keys()) == ["heat_flux_0", "heat_flux_1"]
+    assert list(logged.values()) == [1.0, 2.0]

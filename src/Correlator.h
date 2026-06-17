@@ -23,7 +23,8 @@ class Correlator
 {
     public:
     Correlator(unsigned int output_interval,
-               unsigned int max_lag);
+               unsigned int max_lag,
+               unsigned int sample_interval);
 
     virtual ~Correlator() {}
 
@@ -32,10 +33,14 @@ class Correlator
     void accumulate(py::array_t<double, py::array::c_style | py::array::forcecast> values,
                     uint64_t timestep);
 
+    void setColumnNames(const std::vector<std::string>& column_names);
+
 private:
     // --- 設定 ---
     unsigned int m_output_interval;
     unsigned int m_max_lag;
+    unsigned int m_sample_interval;
+    std::vector<std::string> m_column_names;
 
     // --- データ構造 ---
     unsigned int m_nvalues;      // 物理量の数

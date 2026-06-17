@@ -24,19 +24,24 @@ class Correlator(hoomd.write.CustomWriter):
         output_interval (int): Timestep interval for writing
             ``correlation_<timestep>.dat`` files.
         max_lag (int): Number of lag points to keep in the ring buffer.
+        sample_interval (int): Timestep interval between samples. When
+            ``None``, this is inferred from ``trigger.period`` when present
+            and otherwise defaults to 1.
     """
     
     def __init__(self,
                  logger,
                  trigger,
                  output_interval:int,
-                 max_lag:int):
+                 max_lag:int,
+                 sample_interval=None):
         """Initialize the correlator writer."""
 
         action = _CorrelatorAction(
             logger=logger,
             output_interval=output_interval,
             max_lag=max_lag,
+            sample_interval=_infer_sample_interval(trigger, sample_interval),
         )
         super().__init__(trigger=trigger, action=action)
 
@@ -58,24 +63,35 @@ class _CorrelatorAction(Action):
         Action.Flags.EXTERNAL_FIELD_VIRIAL,
     ]
 
-    def __init__(self, logger, output_interval: int, max_lag: int):
+    def __init__(self, logger, output_interval: int, max_lag: int, sample_interval: int):
         super().__init__()
         self._log_wrapper = _CorrelatorLogWrapper(logger)
-        self._core = _heat_transfer.Correlator(output_interval, max_lag)
+        self._core = _heat_transfer.Correlator(
+            output_interval,
+            max_lag,
+            sample_interval,
+        )
         self._nvalues = None
+        self._column_names = None
 
     def act(self, timestep):
         """Sample the logger and accumulate autocorrelation values."""
+        logged_values = self._log_wrapper.log()
         values = np.asarray(
-            list(self._log_wrapper.log().values()),
+            list(logged_values.values()),
             dtype=np.float64,
             order="C",
         )
+        column_names = list(logged_values.keys())
 
         if self._nvalues is None:
             self._nvalues = values.size
+            self._column_names = column_names
+            self._core.set_column_names(column_names)
         elif values.size != self._nvalues:
             raise RuntimeError("Correlator: logged value count changed.")
+        elif column_names != self._column_names:
+            raise RuntimeError("Correlator: logged value names changed.")
 
         if not np.all(np.isfinite(values)):
             raise RuntimeError(
@@ -119,11 +135,11 @@ class _CorrelatorLogWrapper:
                 )
 
             if isinstance(value, Number):
-                result[key] = float(value)
+                result[_format_log_key(key)] = float(value)
                 continue
 
             if isinstance(value, np.generic):
-                result[key] = float(value)
+                result[_format_log_key(key)] = float(value)
                 continue
 
             if isinstance(value, (list, tuple, np.ndarray)):
@@ -139,8 +155,9 @@ class _CorrelatorLogWrapper:
                         f"Correlator: {key} must be 1D sequence."
                     )
 
+                base_name = _format_log_key(key)
                 for i, v in enumerate(arr):
-                    result[key[-1]+"_"+str(i)] = float(v)
+                    result[f"{base_name}_{i}"] = float(v)
                 continue
 
             raise TypeError(
@@ -148,3 +165,25 @@ class _CorrelatorLogWrapper:
             )
 
         return result
+
+
+def _infer_sample_interval(trigger, sample_interval):
+    """Return a positive integer timestep interval between samples."""
+    if sample_interval is None:
+        sample_interval = getattr(trigger, "period", 1)
+
+    sample_interval = int(sample_interval)
+    if sample_interval <= 0:
+        raise ValueError("Correlator: sample_interval must be positive.")
+
+    return sample_interval
+
+
+def _format_log_key(key):
+    """Convert flattened HOOMD logger keys into file-safe column names."""
+    if isinstance(key, tuple):
+        parts = key
+    else:
+        parts = (key,)
+
+    return ".".join(str(part).replace(" ", "_") for part in parts)

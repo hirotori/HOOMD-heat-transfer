@@ -2,9 +2,11 @@
 
 namespace hoomd {
 Correlator::Correlator(unsigned int output_interval,
-                       unsigned int max_lag)
+                       unsigned int max_lag,
+                       unsigned int sample_interval)
     : m_output_interval(output_interval),
       m_max_lag(max_lag),
+      m_sample_interval(sample_interval),
       m_nvalues(0),
       m_firstindex(0),
       m_lastindex(0),
@@ -14,6 +16,11 @@ Correlator::Correlator(unsigned int output_interval,
         throw std::invalid_argument("Correlator: output_interval must be positive.");
     if (m_max_lag == 0)
         throw std::invalid_argument("Correlator: max_lag must be positive.");
+    if (m_sample_interval == 0)
+        throw std::invalid_argument("Correlator: sample_interval must be positive.");
+    if (m_output_interval % m_sample_interval != 0)
+        throw std::invalid_argument(
+            "Correlator: output_interval must be a multiple of sample_interval.");
 }
 
 py::array_t<double> Correlator::getCorrelation() const
@@ -44,12 +51,27 @@ void Correlator::initialize(unsigned int nvalues)
 {
     m_nvalues = nvalues;
 
+    if (!m_column_names.empty() && m_column_names.size() != m_nvalues)
+    {
+        throw std::runtime_error("Correlator: column name count does not match values.");
+    }
+
     m_buffer.resize(static_cast<size_t>(m_max_lag) * m_nvalues, 0.0);
     m_corr.resize(static_cast<size_t>(m_max_lag) * m_nvalues, 0.0);
     m_counts.resize(m_max_lag, 0);
     m_firstindex = 0;
     m_lastindex = 0;
     m_nsample = 0;
+}
+
+void Correlator::setColumnNames(const std::vector<std::string>& column_names)
+{
+    if (m_nvalues != 0 && column_names.size() != m_nvalues)
+    {
+        throw std::runtime_error("Correlator: column name count does not match values.");
+    }
+
+    m_column_names = column_names;
 }
 
 void Correlator::accumulate(py::array_t<double, py::array::c_style | py::array::forcecast> values,
@@ -190,7 +212,12 @@ void Correlator::write_output(uint64_t timestep)
     file << "# Index TimeLag Count";
 
     for (unsigned int k = 0; k < m_nvalues; k++)
-        file << " C" << k;
+    {
+        if (k < m_column_names.size())
+            file << " " << m_column_names[k] << "*" << m_column_names[k];
+        else
+            file << " C" << k << "*C" << k;
+    }
 
     file << "\n";
 
@@ -199,8 +226,8 @@ void Correlator::write_output(uint64_t timestep)
     {
         unsigned int count = m_counts[lag];
 
-        file << lag << " "           // Index
-             << lag << " "           // TimeLag（※後でnevery対応可）
+        file << lag + 1 << " "       // Index
+             << lag * m_sample_interval << " "
              << count;              // サンプル数
 
         for (unsigned int k = 0; k < m_nvalues; k++)
@@ -222,9 +249,11 @@ namespace detail {
     void export_Correlator(py::module& m)
     {
         py::class_<Correlator, std::shared_ptr<Correlator>>(m, "Correlator")
-            .def(py::init<unsigned int, unsigned int>())
+            .def(py::init<unsigned int, unsigned int, unsigned int>())
             .def("accumulate",
                  &Correlator::accumulate)
+            .def("set_column_names",
+                 &Correlator::setColumnNames)
             .def_property_readonly("correlation",
                                &Correlator::getCorrelation);
     }
