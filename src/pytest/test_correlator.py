@@ -20,29 +20,40 @@ def test_create(simulation_factory, one_particle_snapshot_factory):
 
     sim = simulation_factory(one_particle_snapshot_factory())
 
-    trigger = hoomd.trigger.Periodic(1)
-
     logger = DummyLogWriter(sequence=[0.0])
 
     corr = correlate.Correlator(
         logger,
-        trigger,
+        sample_interval=1,
         output_interval=10,
         max_lag=5,
     )
 
     assert corr is not None
+    assert corr.trigger == hoomd.trigger.Periodic(1)
+
+
+def test_deprecated_trigger():
+    logger = DummyLogWriter(sequence=[0.0])
+
+    with pytest.warns(FutureWarning, match="trigger is deprecated"):
+        corr = correlate.Correlator(
+            logger,
+            trigger=hoomd.trigger.Periodic(2),
+            output_interval=10,
+            max_lag=5,
+        )
+
+    assert corr.trigger == hoomd.trigger.Periodic(2)
 
 def test_trigger_runs(simulation_factory, one_particle_snapshot_factory):
     sim = simulation_factory(one_particle_snapshot_factory())
-
-    trigger = hoomd.trigger.Periodic(1)
 
     writer = DummyLogWriter(np.arange(5, dtype=np.float64))
 
     corr = correlate.Correlator(
         writer,
-        trigger,
+        sample_interval=1,
         output_interval=100,
         max_lag=10,
     )
@@ -54,14 +65,12 @@ def test_trigger_runs(simulation_factory, one_particle_snapshot_factory):
 def test_autocorrelation(simulation_factory, one_particle_snapshot_factory):
     sim = simulation_factory(one_particle_snapshot_factory())
 
-    trigger = hoomd.trigger.Periodic(1)
-
     seq = np.arange(4, dtype=np.float64) + 1.0
     writer = DummyLogWriter(seq)
 
     corr = correlate.Correlator(
         writer,
-        trigger,
+        sample_interval=1,
         output_interval=4,
         max_lag=4,
     )
@@ -84,14 +93,12 @@ def test_autocorrelation(simulation_factory, one_particle_snapshot_factory):
 def test_autocorrelation_long(simulation_factory, one_particle_snapshot_factory):
     sim = simulation_factory(one_particle_snapshot_factory())
 
-    trigger = hoomd.trigger.Periodic(1)
-
     seq = np.ones(10, dtype=np.float64)
     writer = DummyLogWriter(seq)
 
     corr = correlate.Correlator(
         writer,
-        trigger,
+        sample_interval=1,
         output_interval=10,
         max_lag=5,
     )
@@ -109,8 +116,6 @@ def test_autocorrelation_long(simulation_factory, one_particle_snapshot_factory)
 def test_autocorrelation_linear_long(simulation_factory, one_particle_snapshot_factory):
     sim = simulation_factory(one_particle_snapshot_factory())
 
-    trigger = hoomd.trigger.Periodic(1)
-
     N = 100
     max_lag = 10
 
@@ -118,7 +123,7 @@ def test_autocorrelation_linear_long(simulation_factory, one_particle_snapshot_f
     writer = DummyLogWriter(seq)
     corr = correlate.Correlator(
         writer,
-        trigger,
+        sample_interval=1,
         output_interval=N,
         max_lag=max_lag,
     )

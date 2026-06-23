@@ -2,6 +2,8 @@
 
 import hoomd
 from numbers import Number
+from operator import index
+import warnings
 import numpy as np
 from . import _heat_transfer
 from hoomd.custom import Action
@@ -10,40 +12,57 @@ from hoomd.util import _dict_flatten
 class Correlator(hoomd.write.CustomWriter):
     """Accumulate autocorrelation functions from a HOOMD logger.
 
-    ``Correlator`` samples numeric values from ``logger.log()`` when its
-    trigger fires. Scalars are used directly. One-dimensional numeric
-    sequences are expanded into separate scalar channels. The Python writer
-    reads the logger and passes numeric values to the C++ backend, which
-    accumulates the unnormalized time-lag products and writes normalized
+    ``Correlator`` samples numeric values from ``logger.log()`` every
+    ``sample_interval`` timesteps. Scalars are used directly. One-dimensional
+    numeric sequences are expanded into separate scalar channels. The Python
+    writer reads the logger and passes numeric values to the C++ backend,
+    which accumulates the unnormalized time-lag products and writes normalized
     autocorrelation data every ``output_interval`` timesteps.
 
     Args:
         logger (hoomd.logging.Logger): Logger containing numeric scalar or
             one-dimensional sequence quantities.
-        trigger (hoomd.trigger.Trigger): Sampling trigger.
+        sample_interval (int): Timestep interval between samples.
         output_interval (int): Timestep interval for writing
             ``correlation_<timestep>.dat`` files.
         max_lag (int): Number of lag points to keep in the ring buffer.
-        sample_interval (int): Timestep interval between samples. When
-            ``None``, this is inferred from ``trigger.period`` when present
-            and otherwise defaults to 1.
+        trigger (hoomd.trigger.Trigger): Deprecated sampling trigger. Use
+            ``sample_interval`` instead. Only ``Periodic`` triggers are
+            supported.
     """
     
     def __init__(self,
                  logger,
-                 trigger,
-                 output_interval:int,
-                 max_lag:int,
-                 sample_interval=None):
+                 sample_interval=None,
+                 output_interval=None,
+                 max_lag=None,
+                 *,
+                 trigger=None):
         """Initialize the correlator writer."""
+
+        if trigger is not None:
+            if sample_interval is not None:
+                raise TypeError(
+                    "Correlator: specify sample_interval or trigger, not both."
+                )
+            _warn_trigger_deprecated()
+            sample_interval = _sample_interval_from_trigger(trigger)
+        elif isinstance(sample_interval, hoomd.trigger.Trigger):
+            _warn_trigger_deprecated()
+            sample_interval = _sample_interval_from_trigger(sample_interval)
+
+        sample_interval = _validate_sample_interval(sample_interval)
 
         action = _CorrelatorAction(
             logger=logger,
             output_interval=output_interval,
             max_lag=max_lag,
-            sample_interval=_infer_sample_interval(trigger, sample_interval),
+            sample_interval=sample_interval,
         )
-        super().__init__(trigger=trigger, action=action)
+        super().__init__(
+            trigger=hoomd.trigger.Periodic(sample_interval),
+            action=action,
+        )
 
     def correlation(self):
         """numpy.ndarray: Current normalized autocorrelation array.
@@ -167,16 +186,40 @@ class _CorrelatorLogWrapper:
         return result
 
 
-def _infer_sample_interval(trigger, sample_interval):
+def _validate_sample_interval(sample_interval):
     """Return a positive integer timestep interval between samples."""
-    if sample_interval is None:
-        sample_interval = getattr(trigger, "period", 1)
+    if isinstance(sample_interval, (bool, np.bool_)):
+        raise TypeError("Correlator: sample_interval must be an integer.")
 
-    sample_interval = int(sample_interval)
+    try:
+        sample_interval = index(sample_interval)
+    except TypeError as err:
+        raise TypeError(
+            "Correlator: sample_interval must be an integer."
+        ) from err
+
     if sample_interval <= 0:
         raise ValueError("Correlator: sample_interval must be positive.")
 
     return sample_interval
+
+
+def _sample_interval_from_trigger(trigger):
+    """Extract the sampling interval from a deprecated trigger argument."""
+    if isinstance(trigger, hoomd.trigger.Periodic):
+        return trigger.period
+    if isinstance(trigger, hoomd.trigger.Trigger):
+        raise ValueError("Correlator: trigger must be Periodic.")
+    return trigger
+
+
+def _warn_trigger_deprecated():
+    """Warn that callers should pass sample_interval instead of trigger."""
+    warnings.warn(
+        "Correlator: trigger is deprecated; pass sample_interval instead.",
+        FutureWarning,
+        stacklevel=3,
+    )
 
 
 def _format_log_key(key):

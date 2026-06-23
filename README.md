@@ -88,7 +88,7 @@ logger.add(heat_flux, quantities=["heatflux", "kinetic_heatflux", "virial_heatfl
 
 correlator = correlate.Correlator(
     logger=logger,
-    trigger=hoomd.trigger.Periodic(1),
+    sample_interval=1,
     output_interval=1000,
     max_lag=1000,
 )
@@ -242,7 +242,7 @@ logger.add(heat_flux, quantities=["heatflux", "kinetic_heatflux", "virial_heatfl
 
 correlator = correlate.Correlator(
     logger=logger,
-    trigger=hoomd.trigger.Periodic(1),
+    sample_interval=1,
     output_interval=1000,
     max_lag=1000,
 )

@@ -70,7 +70,7 @@ s = 1
 p = 1000
 d = s*p
 corr = correlate.Correlator(logger,
-                            hoomd.trigger.Periodic(s),
+                            sample_interval=s,
                             output_interval=d,
                             max_lag = p)
 simulation.operations.writers.append(corr)
@@ -102,4 +102,3 @@ simulation.operations.writers.append(corr)
 
 # run
 simulation.run(nrun)
-
