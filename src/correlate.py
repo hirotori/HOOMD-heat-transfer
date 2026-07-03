@@ -51,7 +51,16 @@ class Correlator(hoomd.write.CustomWriter):
             _warn_trigger_deprecated()
             sample_interval = _sample_interval_from_trigger(sample_interval)
 
-        sample_interval = _validate_sample_interval(sample_interval)
+        sample_interval = _validate_positive_integer(
+            sample_interval, "sample_interval"
+        )
+        output_interval = _validate_positive_integer(
+            output_interval, "output_interval"
+        )
+        max_lag = _validate_positive_integer(max_lag, "max_lag")
+        _validate_interval_relationships(
+            sample_interval, output_interval, max_lag
+        )
 
         action = _CorrelatorAction(
             logger=logger,
@@ -186,22 +195,42 @@ class _CorrelatorLogWrapper:
         return result
 
 
-def _validate_sample_interval(sample_interval):
-    """Return a positive integer timestep interval between samples."""
-    if isinstance(sample_interval, (bool, np.bool_)):
-        raise TypeError("Correlator: sample_interval must be an integer.")
+def _validate_positive_integer(value, name):
+    """Return a positive integer parameter value."""
+    if isinstance(value, (bool, np.bool_)):
+        raise TypeError(f"Correlator: {name} must be an integer.")
 
     try:
-        sample_interval = index(sample_interval)
+        value = index(value)
     except TypeError as err:
         raise TypeError(
-            "Correlator: sample_interval must be an integer."
+            f"Correlator: {name} must be an integer."
         ) from err
 
-    if sample_interval <= 0:
-        raise ValueError("Correlator: sample_interval must be positive.")
+    if value <= 0:
+        raise ValueError(f"Correlator: {name} must be positive.")
 
-    return sample_interval
+    return value
+
+
+def _validate_interval_relationships(sample_interval, output_interval, max_lag):
+    """Validate interval combinations and warn about common s,p,d mix-ups."""
+    if output_interval % sample_interval != 0:
+        raise ValueError(
+            "Correlator: output_interval must be a multiple of sample_interval."
+        )
+
+    lag_span = sample_interval * max_lag
+    if output_interval < lag_span:
+        warnings.warn(
+            "Correlator: output_interval is shorter than "
+            "sample_interval * max_lag. The output will be written before "
+            "the largest lag is fully sampled. If you are using s,p,d "
+            "parameters, pass sample_interval=s, output_interval=d, "
+            "max_lag=p.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
 
 
 def _sample_interval_from_trigger(trigger):

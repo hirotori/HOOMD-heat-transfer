@@ -140,11 +140,6 @@ void Correlator::accumulate(py::array_t<double, py::array::c_style | py::array::
 
 void Correlator::accumulateValues()
 {
-
-    // --- count更新 ---
-    for (unsigned int k = 0; k < m_nsample; k++)
-        m_counts[k]++;
-
     if (m_nsample > m_max_lag || m_lastindex >= m_max_lag
         || m_counts.size() != m_max_lag
         || m_buffer.size() != static_cast<size_t>(m_max_lag) * m_nvalues
@@ -152,6 +147,10 @@ void Correlator::accumulateValues()
         {
         throw std::runtime_error("Correlator: invalid ring-buffer state.");
         }
+
+    // --- count更新 ---
+    for (unsigned int k = 0; k < m_nsample; k++)
+        m_counts[k]++;
 
     unsigned int m = m_lastindex;
     const unsigned int n = m_lastindex;

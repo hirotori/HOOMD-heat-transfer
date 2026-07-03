@@ -3,6 +3,7 @@ from hoomd import conftest
 from hoomd.heat_transfer import correlate
 import pytest
 import numpy as np
+import warnings
 from pathlib import Path
 
 class DummyLogWriter:
@@ -61,6 +62,45 @@ def test_trigger_runs(simulation_factory, one_particle_snapshot_factory):
     sim.operations += corr
 
     sim.run(5)
+
+
+def test_output_interval_must_match_sample_interval():
+    logger = DummyLogWriter(sequence=[0.0])
+
+    with pytest.raises(ValueError, match="multiple of sample_interval"):
+        correlate.Correlator(
+            logger,
+            sample_interval=4,
+            output_interval=10,
+            max_lag=2,
+        )
+
+
+def test_warns_when_lag_span_exceeds_output_interval():
+    logger = DummyLogWriter(sequence=[0.0])
+
+    with pytest.warns(RuntimeWarning, match="sample_interval \\* max_lag"):
+        correlate.Correlator(
+            logger,
+            sample_interval=10,
+            output_interval=10_000,
+            max_lag=500_000,
+        )
+
+
+def test_accepts_spd_parameter_mapping_without_warning():
+    logger = DummyLogWriter(sequence=[0.0])
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        correlate.Correlator(
+            logger,
+            sample_interval=10,
+            output_interval=500_000,
+            max_lag=10_000,
+        )
+
+    assert not record
 
 def test_autocorrelation(simulation_factory, one_particle_snapshot_factory):
     sim = simulation_factory(one_particle_snapshot_factory())

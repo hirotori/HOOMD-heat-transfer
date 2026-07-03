@@ -95,6 +95,9 @@ correlator = correlate.Correlator(
 simulation.operations.writers.append(correlator)
 ```
 
+When using parameters named `s`, `p`, and `d`, pass them as
+`sample_interval=s`, `output_interval=d`, and `max_lag=p`.
+
 The correlator writes files named `correlation_<timestep>.dat` in the current working directory.
 
 **Note** Long heat-flux autocorrelation calculations on CPU may cause an OS restart. Running on GPU is recommended. Alternatively, write the heat-flux time series to a file as shown below, then compute the autocorrelation after all simulations have finished.
@@ -248,6 +251,9 @@ correlator = correlate.Correlator(
 )
 simulation.operations.writers.append(correlator)
 ```
+
+`s`, `p`, `d` という変数名を使う場合は、`sample_interval=s`,
+`output_interval=d`, `max_lag=p` として渡してください。
 
 `Correlator` はカレントディレクトリに `correlation_<timestep>.dat` という名前で相関関数を書き出します。
 
