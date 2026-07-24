@@ -4,15 +4,18 @@ set(COMPONENT_NAME heat_transfer)
 # TODO: List all host C++ source code files in _${COMPONENT_NAME}_sources.
 set(_${COMPONENT_NAME}_sources
     module.cc
+    CosineAngleForceCompute.cc
     ComputeheatFlux.cc
     MuellerPlatheHeatFlow.cc
     ComputeHeatFluxGPU.cc
+    CosineAngleForceComputeGPU.cc
     MuellerPlatheHeatFlowGPU.cc
     Correlator.cc
     )
 
 # TODO: List all GPU C++ source code files in _${COMPONENT_NAME}_cu_sources.
 set(_${COMPONENT_NAME}_cu_sources
+    CosineAngleForceGPU.cu
     ComputeHeatFluxGPU.cu
     MuellerPlatheHeatFlowGPU.cu
     )
@@ -20,6 +23,7 @@ set(_${COMPONENT_NAME}_cu_sources
 # TODO: List all Python modules in python_files.
 set(python_files
     __init__.py
+    angle.py
     version.py
     heatflux.py
     heatflow.py

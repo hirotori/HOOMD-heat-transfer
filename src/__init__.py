@@ -23,4 +23,4 @@ The package exposes two public Python modules:
 """
 
 from . import version
-from . import heatflux, heatflow, correlate, tablewriter
+from . import angle, heatflux, heatflow, correlate, tablewriter

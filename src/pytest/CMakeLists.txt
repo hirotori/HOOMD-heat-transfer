@@ -1,6 +1,7 @@
 # TODO: List all pytest files in test_files.
 set(test_files __init__.py
           test_version.py
+          test_angle.py
           test_heatflux.py
           test_heatflow.py
           test_heatflux_twopairLJ.py
