@@ -1,5 +1,5 @@
 # HOOMD-blue heat transfer
-[![DOI](https://zenodo.org/badge/1233641288.svg)](https://doi.org/10.5281/zenodo.21255016)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21255017.svg)](https://doi.org/10.5281/zenodo.21255017)
 
 [English](#english) / [日本語](#日本語)
 
