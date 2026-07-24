@@ -8,4 +8,4 @@ import hoomd.heat_transfer
 
 def test_version():
     """Test the version attribute."""
-    assert hoomd.heat_transfer.version.version == '0.0.0'
+    assert hoomd.heat_transfer.version.version == '0.3.0'
